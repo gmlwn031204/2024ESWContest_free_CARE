@@ -1,0 +1,109 @@
+import 'package:flutter/material.dart';
+
+class Main_page extends StatelessWidget {
+  const Main_page({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 145),
+              Text(
+                'SafeRide',
+                style: TextStyle(
+                  fontSize: 73,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: Colors.black,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 8.0,
+                      color: Colors.black26,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 48),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('보호자 이름', style: TextStyle(fontSize: 14, color: Colors.black87)),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '이수원',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('관계', style: TextStyle(fontSize: 14, color: Colors.black87)),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '부',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('보호자 번호', style: TextStyle(fontSize: 14, color: Colors.black87)),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '010-1234-5678',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
