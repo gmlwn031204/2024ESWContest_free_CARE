@@ -17,8 +17,8 @@ const int ECHO_PINS[] = {ECHO1, ECHO2, ECHO3};
 const int CRASH_SENSOR_PIN = 8;
 
 // 거리 임계값
-const int WARNING_DISTANCE = 30;  // 30cm
-const int DANGER_DISTANCE = 15;   // 15cm
+const int WARNING_DISTANCE = 150;  // 150cm (1.5m)
+const int DANGER_DISTANCE = 50;   // 50cm (0.5m)
 const unsigned long MIN_DETECT_TIME = 500;  // 0.5초
 
 unsigned long lastSendTime = 0;
@@ -57,25 +57,18 @@ int measureDistance(int trigPin, int echoPin, int sensorIndex) {
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
   
-  long duration = pulseIn(echoPin, HIGH, 20000);
+  // 타임아웃 40ms로 연장 (약 6.8m 거리까지 측정 가능)
+  long duration = pulseIn(echoPin, HIGH, 40000);
   int distance = duration * 0.034 / 2;
   
   // 유효한 거리값 확인 (0cm 초과 400cm 미만)
   if(distance > 0 && distance < 400) {
-    // 이전 측정값과 비교하여 극단적인 변화만 필터링
-    if(prevDistances[sensorIndex] > 0) {
-      // 이전 값과 현재 값의 차이가 100cm 이상일 때만 필터링
-      if(abs(distance - prevDistances[sensorIndex]) > 100) {
-        return prevDistances[sensorIndex];
-      }
-    }
-    
-    // 새로운 측정값 저장
+    // 필터링 제거 (급격한 변화 허용)
     prevDistances[sensorIndex] = distance;
     return distance;
   }
   
-  // 측정 실패시 이전 값 반환
+  // 측정 실패 시 이전 값 반환
   return prevDistances[sensorIndex];
 }
 
@@ -111,7 +104,6 @@ void loop() {
 
   // 일정 주기로 데이터 전송
   if (now - lastSendTime >= SEND_INTERVAL) {
-    // 상세 센서값 출력
     Serial.print("거리(cm) - L: ");
     Serial.print(distances[0]); 
     Serial.print(", C: ");
@@ -133,7 +125,6 @@ void loop() {
         break;
     }
     
-    // 데이터 포맷 전송
     Serial.print("S:"); Serial.print(dangerLevel);
     Serial.print(",C:"); Serial.println(crashDetected ? 1 : 0);
     
