@@ -1,7 +1,37 @@
 import 'package:flutter/material.dart';
+import 'Impact_page.dart';
+import 'dart:async';
 
-class Main_page extends StatelessWidget {
+class Main_page extends StatefulWidget {
   const Main_page({super.key});
+
+  @override
+  State<Main_page> createState() => _Main_pageState();
+}
+
+class _Main_pageState extends State<Main_page> {
+  Timer? _timer;
+  bool _navigated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(const Duration(seconds: 10), () {
+      if (!_navigated && mounted) {
+        _navigated = true;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Impact_page()),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
