@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'Impact_page.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 class Main_page extends StatefulWidget {
   final String name;
@@ -22,84 +22,55 @@ class Main_page extends StatefulWidget {
 
 class _Main_pageState extends State<Main_page> {
   bool _navigated = false;
-  BluetoothDevice? device;
-  StreamSubscription<List<int>>? notificationSubscription;
+  BluetoothConnection? connection;
+  StreamSubscription? subscription;
 
   @override
   void initState() {
     super.initState();
-    _connectToBLE();
+    _connectToBluetooth();
   }
 
   @override
   void dispose() {
-    notificationSubscription?.cancel();
-    device?.disconnect();
+    subscription?.cancel();
+    connection?.dispose();
     super.dispose();
   }
 
-  // BLE 연결 함수
-  void _connectToBLE() async {
+  // 블루투스 연결 함수
+  void _connectToBluetooth() async {
     try {
-      // BLE 스캔 시작
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
-      
-      // 스캔 결과 리스닝
-      FlutterBluePlus.scanResults.listen((results) async {
-        for (ScanResult r in results) {
-          print('${r.device.name} found! rssi: ${r.rssi}');
-          
-          if (r.device.name.contains('Arduino') && !_navigated) {
-            print('Found Arduino: ${r.device.name}');
-            
-            // 스캔 중지
-            await FlutterBluePlus.stopScan();
-            
-            // 연결
-            device = r.device;
-            await device!.connect();
-            print('Connected to ${r.device.name}');
+      // HC-06의 MAC 주소를 통해 연결
+      BluetoothConnection.toAddress("98:D3:31:F5:B9:E7").then((BluetoothConnection conn) {
+        print('Connected to the device');
+        connection = conn;
 
-            // 서비스 탐색
-            List<BluetoothService> services = await device!.discoverServices();
-            for (BluetoothService service in services) {
-              for (BluetoothCharacteristic characteristic in service.characteristics) {
+        // 데이터 수신 리스너 설정
+        subscription = connection!.input!.listen((Uint8List data) {
+          String message = String.fromCharCodes(data);
+          print('Received: $message');
 
-                if (characteristic.properties.notify) {
-
-                  await characteristic.setNotifyValue(true);
-                  
-                  // 알림 리스닝
-                  notificationSubscription = characteristic.lastValueStream.listen((value) {
-                    if (value.isNotEmpty) {
-                      String message = String.fromCharCodes(value);
-                      print('Received: $message');
-                      
-                      // 충돌 감지 메시지를 받으면 Impact_page로 이동
-                      if (message.trim() == "CRASH_ALERT" && !_navigated && mounted) {
-                        _navigated = true;
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Impact_page(
-                              name: widget.name,
-                              relation: widget.relation,
-                              phone: widget.phone,
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  });
-                }
-              }
-            }
+          // 충돌 감지 메시지를 받으면 Impact_page로 이동
+          if (message.trim() == "CRASH_ALERT" && !_navigated && mounted) {
+            _navigated = true;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Impact_page(
+                  name: widget.name,
+                  relation: widget.relation,
+                  phone: widget.phone,
+                ),
+              ),
+            );
           }
-        }
+        });
+      }).catchError((error) {
+        print('Cannot connect, exception occurred: $error');
       });
-      
     } catch (e) {
-      print('Error connecting to BLE device: $e');
+      print('Error connecting to Bluetooth device: $e');
     }
   }
 
