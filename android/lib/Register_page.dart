@@ -117,7 +117,11 @@ class _Register_page extends State<Register_page> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Main_page(),
+                          builder: (context) => Main_page(
+                            name: _nameController.text,
+                            relation: _relationController.text,
+                            phone: _phoneController.text,
+                          ),
                         ),
                       );
                     },
