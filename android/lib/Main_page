@@ -1,36 +1,107 @@
-import 'package:flutter/material.dart';
-import 'Impact_page.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'Impact_page.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class Main_page extends StatefulWidget {
-  const Main_page({super.key});
+  final String name;
+  final String relation;
+  final String phone;
+
+  const Main_page({
+    super.key,
+    required this.name,
+    required this.relation,
+    required this.phone,
+  });
 
   @override
   State<Main_page> createState() => _Main_pageState();
 }
 
 class _Main_pageState extends State<Main_page> {
-  Timer? _timer;
   bool _navigated = false;
+  BluetoothDevice? device;
+  StreamSubscription<List<int>>? notificationSubscription;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 10), () {
-      if (!_navigated && mounted) {
-        _navigated = true;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Impact_page()),
-        );
-      }
-    });
+    _connectToBLE();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    notificationSubscription?.cancel();
+    device?.disconnect();
     super.dispose();
+  }
+
+  // BLE 연결 함수
+  void _connectToBLE() async {
+    try {
+      // BLE 스캔 시작
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      
+      // 스캔 결과 리스닝
+      FlutterBluePlus.scanResults.listen((results) async {
+        for (ScanResult r in results) {
+          print('${r.device.name} found! rssi: ${r.rssi}');
+          
+          // Arduino Nano 33 BLE 찾기 (이름이 "Arduino" 또는 특정 이름으로 시작하는 기기)
+          if (r.device.name.contains('Arduino') && !_navigated) {
+            print('Found Arduino: ${r.device.name}');
+            
+            // 스캔 중지
+            await FlutterBluePlus.stopScan();
+            
+            // 연결
+            device = r.device;
+            await device!.connect();
+            print('Connected to ${r.device.name}');
+
+            // 서비스 탐색
+            List<BluetoothService> services = await device!.discoverServices();
+            for (BluetoothService service in services) {
+              for (BluetoothCharacteristic characteristic in service.characteristics) {
+
+                if (characteristic.properties.notify) {
+
+                  await characteristic.setNotifyValue(true);
+                  
+                  // 알림 리스닝
+                  notificationSubscription = characteristic.lastValueStream.listen((value) {
+                    if (value.isNotEmpty) {
+                      String message = String.fromCharCodes(value);
+                      print('Received: $message');
+                      
+                      // 충돌 감지 메시지를 받으면 Impact_page로 이동
+                      if (message.trim() == "CRASH_ALERT" && !_navigated && mounted) {
+                        _navigated = true;
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Impact_page(
+                              name: widget.name,
+                              relation: widget.relation,
+                              phone: widget.phone,
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      });
+      
+    } catch (e) {
+      print('Error connecting to BLE device: $e');
+    }
   }
 
   @override
@@ -74,9 +145,9 @@ class _Main_pageState extends State<Main_page> {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  '이수원',
-                  style: TextStyle(
+                child: Text(
+                  widget.name,
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -97,9 +168,9 @@ class _Main_pageState extends State<Main_page> {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  '부',
-                  style: TextStyle(
+                child: Text(
+                  widget.relation,
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -120,9 +191,9 @@ class _Main_pageState extends State<Main_page> {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  '010-1234-5678',
-                  style: TextStyle(
+                child: Text(
+                  widget.phone,
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -137,3 +208,4 @@ class _Main_pageState extends State<Main_page> {
     );
   }
 }
+
