@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'Main_page.dart';
 
 class Message_page extends StatelessWidget {
-  const Message_page({super.key});
+  final String name;
+  final String relation;
+  final String phone;
+
+  const Message_page({
+    super.key,
+    required this.name,
+    required this.relation,
+    required this.phone,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,17 +74,21 @@ class Message_page extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 35),
-              // 홈화면 돌아가기 버튼
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const Main_page(),
+                        builder: (context) => Main_page(
+                          name: name,
+                          relation: relation,
+                          phone: phone,
+                        ),
                       ),
+                      (route) => false,  // 모든 이전 페이지 스택 제거
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -85,7 +98,7 @@ class Message_page extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    '홈화면 돌아가기',
+                    '홈으로 돌아가기',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
