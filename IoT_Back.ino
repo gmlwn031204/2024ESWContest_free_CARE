@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 // 후방 레이저 항상 ON
 const int LASER_PIN = 9;  
 
@@ -8,6 +10,13 @@ const int TRIG2 = 4;
 const int ECHO2 = 7;
 const int TRIG3 = 2;
 const int ECHO3 = 5;
+
+// 블루투스 모듈 핀 설정
+const int BT_RX = 10;  // 아두이노의 10번 핀을 RX로 설정
+const int BT_TX = 11;  // 아두이노의 11번 핀을 TX로 설정
+
+// 블루투스 시리얼 통신 객체 생성
+SoftwareSerial BTSerial(BT_RX, BT_TX);
 
 // 핀 배열 정의
 const int TRIG_PINS[] = {TRIG1, TRIG2, TRIG3};
@@ -32,6 +41,7 @@ int prevDistances[3] = {0, 0, 0};
 
 void setup() {
   Serial.begin(9600);
+  BTSerial.begin(9600);  // 블루투스 통신 초기화
   
   // 레이저 핀 설정
   pinMode(LASER_PIN, OUTPUT);
@@ -47,6 +57,7 @@ void setup() {
   pinMode(CRASH_SENSOR_PIN, INPUT_PULLUP);
   
   Serial.println("=== 센서 초기화 완료 ===");
+  BTSerial.println("=== 블루투스 연결 완료 ===");
   Serial.println("왼쪽거리, 중앙거리, 오른쪽거리, 충돌감지, 위험레벨");
 }
 
@@ -104,6 +115,7 @@ void loop() {
 
   // 일정 주기로 데이터 전송
   if (now - lastSendTime >= SEND_INTERVAL) {
+    // 시리얼 모니터로 데이터 출력
     Serial.print("거리(cm) - L: ");
     Serial.print(distances[0]); 
     Serial.print(", C: ");
@@ -128,6 +140,25 @@ void loop() {
     Serial.print("S:"); Serial.print(dangerLevel);
     Serial.print(",C:"); Serial.println(crashDetected ? 1 : 0);
     
+    // 블루투스로 데이터 전송 (JSON 형식)
+    BTSerial.print("{");
+    BTSerial.print("\"left\":");
+    BTSerial.print(distances[0]);
+    BTSerial.print(",\"center\":");
+    BTSerial.print(distances[1]);
+    BTSerial.print(",\"right\":");
+    BTSerial.print(distances[2]);
+    BTSerial.print(",\"crash\":");
+    BTSerial.print(crashDetected ? "true" : "false");
+    BTSerial.print(",\"danger\":");
+    BTSerial.print(dangerLevel);
+    BTSerial.println("}");
+    
     lastSendTime = now;
+  }
+  
+  // 충돌이 감지되면 즉시 블루투스로 알림 전송
+  if (crashDetected) {
+    BTSerial.println("CRASH_ALERT");
   }
 }
