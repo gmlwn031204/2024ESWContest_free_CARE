@@ -1,7 +1,13 @@
 #include <Wire.h>
 #include <MPU6050_light.h>
+#include <SoftwareSerial.h>
 
 MPU6050 mpu(Wire);
+
+// 블루투스 모듈 핀 설정
+const int BT_RX = 11;  // HC-06의 TX와 연결
+const int BT_TX = 12;  // HC-06의 RX와 연결
+SoftwareSerial bluetooth(BT_RX, BT_TX);
 
 // 핀 설정
 const int SPEAKER_PIN = 6;
@@ -30,7 +36,8 @@ bool crash2Alarmed = false;
 bool prevTiltDetected = false;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600);      // 디버깅용 시리얼
+  bluetooth.begin(9600);   // 블루투스 통신 초기화
   Wire.begin();
 
   byte status = mpu.begin();
@@ -58,6 +65,12 @@ void playAlarm() {
   }
 }
 
+void sendCrashData(String sensorId) {
+  // JSON 형식으로 데이터 전송
+  String jsonData = "{\"crash\":\"" + sensorId + "\"}";
+  bluetooth.println(jsonData);
+  Serial.println("블루투스 전송: " + jsonData);  // 디버깅용
+}
 
 void updateLasers() {
   unsigned long currentMillis = millis();
@@ -101,10 +114,12 @@ void loop() {
 
   if (crash1) {
     Serial.println("센서 1 충격 감지됨");
+    sendCrashData("FRONT1");  // 블루투스로 전송
     crash1LastTime = now;
   }
   if (crash2) {
     Serial.println("센서 2 충격 감지됨");
+    sendCrashData("FRONT2");  // 블루투스로 전송
     crash2LastTime = now;
   }
 
@@ -129,14 +144,15 @@ void loop() {
   // 기울기 감지 알람
   if (tiltDetected && !prevTiltDetected) {
     Serial.println("기울기 감지됨");
+    sendCrashData("TILT");  // 블루투스로 전송
     playAlarm();
   }
   prevTiltDetected = tiltDetected;
 
-  // 후방 데이터 수신
-  if (Serial.available()) {
-    String input = Serial.readStringUntil('\n');
-    Serial.println("수신된 데이터: " + input);
+  // 후방 데이터 수신 (블루투스)
+  if (bluetooth.available()) {
+    String input = bluetooth.readStringUntil('\n');
+    Serial.println("블루투스 수신: " + input);
 
     int sIndex = input.indexOf("S:");
     int cIndex = input.indexOf(",C:");
@@ -150,6 +166,7 @@ void loop() {
   // 후방 충격 알람
   if (rearCrash) {
     Serial.println("후방 충격 감지됨");
+    sendCrashData("REAR");  // 블루투스로 전송
     playAlarm();
     rearCrash = false;
   }
@@ -157,4 +174,3 @@ void loop() {
   // 레이저 상태 갱신
   updateLasers();
 }
-
