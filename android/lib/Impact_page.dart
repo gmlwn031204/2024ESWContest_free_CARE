@@ -4,7 +4,16 @@ import 'Message_page.dart';
 import 'dart:async';
 
 class Impact_page extends StatefulWidget {
-  const Impact_page({super.key});
+  final String name;
+  final String relation;
+  final String phone;
+
+  const Impact_page({
+    super.key,
+    required this.name,
+    required this.relation,
+    required this.phone,
+  });
 
   @override
   State<Impact_page> createState() => _Impact_pageState();
@@ -22,7 +31,13 @@ class _Impact_pageState extends State<Impact_page> {
         _navigated = true;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Message_page()),
+          MaterialPageRoute(
+            builder: (context) => Message_page(
+              name: widget.name,
+              relation: widget.relation,
+              phone: widget.phone,
+            ),
+          ),
         );
       }
     });
@@ -40,7 +55,13 @@ class _Impact_pageState extends State<Impact_page> {
       _timer?.cancel();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Clear_page()),
+        MaterialPageRoute(
+          builder: (context) => Clear_page(
+            name: widget.name,
+            relation: widget.relation,
+            phone: widget.phone,
+          ),
+        ),
       );
     }
   }
